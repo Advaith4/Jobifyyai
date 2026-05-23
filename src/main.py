@@ -121,6 +121,10 @@ app.add_middleware(
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
+@app.get("/api/health", include_in_schema=False)
+def health_check():
+    return {"status": "ok"}
+
 # ── API Routers ───────────────────────────────────────────────────────────────
 app.include_router(auth.router)
 app.include_router(resume.router)

@@ -365,7 +365,7 @@ body[data-view="interview"] .top-nav {
 /* Dashboard layout: full-height flex column so only the viewport scrolls, not the whole page */
 .dashboard-layout { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 .content-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
-.dashboard-viewport { flex: 1; overflow-y: auto; max-width: 1100px; margin: 0 auto; padding: 2.25rem 1.25rem; width: 100%; }
+.dashboard-viewport { flex: 1; overflow-y: auto; overflow-x: hidden; max-width: 1240px; margin: 0 auto; padding: 2.25rem 1.25rem; width: 100%; }
 
 /* The interview pane must break out of viewport max-width and padding */
 .interview-pane-wrapper { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
@@ -2286,6 +2286,14 @@ body[data-view="interview"] .top-nav {
         radial-gradient(circle at top left, rgba(16,185,129,0.12), transparent 38%),
         radial-gradient(circle at bottom right, rgba(6,182,212,0.12), transparent 34%),
         rgba(24,24,27,0.54);
+    min-width: 0;
+    overflow: hidden;
+}
+
+.jobs-intel-primary,
+.jobs-intel-metrics,
+.jobs-intel-card {
+    min-width: 0;
 }
 
 .jobs-intel-primary h3 {
@@ -2293,6 +2301,7 @@ body[data-view="interview"] .top-nav {
     font-size: 1.45rem;
     line-height: 1.15;
     margin-bottom: 0.45rem;
+    overflow-wrap: anywhere;
 }
 
 .jobs-intel-metrics {
@@ -2324,12 +2333,14 @@ body[data-view="interview"] .top-nav {
     font-family: var(--font-head);
     font-size: 1.2rem;
     margin-bottom: 0.35rem;
+    overflow-wrap: anywhere;
 }
 
 .jobs-intel-card p {
     color: var(--text-secondary);
     font-size: 0.86rem;
     line-height: 1.6;
+    overflow-wrap: anywhere;
 }
 
 .jobs-role-mix {
@@ -2346,6 +2357,9 @@ body[data-view="interview"] .top-nav {
     color: #e9d5ff;
     font-size: 0.78rem;
     font-weight: 700;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .premium-job-card {
@@ -2353,13 +2367,34 @@ body[data-view="interview"] .top-nav {
     background:
         linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)),
         rgba(24,24,27,0.56);
+    min-width: 0;
+    overflow: hidden;
 }
 
 .job-card-top {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 1rem;
     align-items: flex-start;
+}
+
+.job-card-top > div:first-child {
+    min-width: 0;
+}
+
+.premium-job-card h3 {
+    font-family: var(--font-head);
+    font-size: 1.18rem;
+    line-height: 1.18;
+    margin-bottom: 0.3rem;
+    overflow-wrap: anywhere;
+}
+
+.premium-job-card .job-card-top p {
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
 }
 
 .job-fit-bucket {
@@ -2380,11 +2415,16 @@ body[data-view="interview"] .top-nav {
     flex-direction: column;
     align-items: flex-end;
     gap: 0.5rem;
+    flex: 0 0 auto;
+    max-width: 104px;
 }
 
 .job-role-source {
     color: var(--text-muted);
     font-size: 0.78rem;
+    line-height: 1.25;
+    text-align: right;
+    overflow-wrap: anywhere;
 }
 
 .job-reason-grid {
@@ -2425,6 +2465,7 @@ body[data-view="interview"] .top-nav {
     /* allow inner scrolling when text is long */
     flex: 1 1 auto;
     overflow-y: auto;
+    overflow-wrap: anywhere;
 }
 
 .job-chip-group {
@@ -3154,10 +3195,68 @@ body[data-view="resume"] #pane-resume {
     margin: 0 auto;
 }
 
+/* Job Matches page: contain long provider text and keep cards inside viewport */
+#pane-jobs {
+    min-width: 0;
+}
+
+#pane-jobs .grid-card-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+    align-items: stretch;
+}
+
+#pane-jobs .crm-job-card {
+    min-width: 0;
+    height: auto;
+}
+
+#pane-jobs .deep-match-badge {
+    margin-bottom: 0;
+    white-space: nowrap;
+}
+
+#pane-jobs .job-reason-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+#pane-jobs .job-reason-card {
+    min-width: 0;
+    min-height: 142px;
+}
+
+#pane-jobs .job-card-actions {
+    gap: 0.75rem;
+}
+
+#pane-jobs .track-btn {
+    margin: 0;
+}
+
+@media (max-width: 1040px) {
+    #pane-jobs .grid-card-layout,
+    #pane-jobs .job-reason-grid,
+    .jobs-intel-metrics {
+        grid-template-columns: 1fr;
+    }
+
+    .job-card-top {
+        grid-template-columns: 1fr;
+    }
+
+    .job-match-cluster {
+        align-items: flex-start;
+        max-width: none;
+    }
+
+    .job-role-source {
+        text-align: left;
+    }
+}
+
 @media (max-width: 900px) {
     #pane-coach .coach-overview-grid,
     .coach-disclosure-row {
         grid-template-columns: 1fr;
     }
 }
-

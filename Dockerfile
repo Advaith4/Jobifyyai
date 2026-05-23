@@ -36,5 +36,5 @@ USER jobify_user
 
 EXPOSE 8000
 
-# Production: 2 workers, no reload
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+# Production: respect the platform-provided PORT, defaulting to 8000 locally.
+CMD ["sh", "-c", "uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers ${WEB_CONCURRENCY:-2}"]

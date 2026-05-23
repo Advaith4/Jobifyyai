@@ -3358,21 +3358,75 @@ async function loadSessionHistory(sessionDbId, role, difficulty, sidebarEl) {
     }
 }
 
+function stripJobUrl(value = '') {
+    return String(value || '')
+        .replace(/https?:\/\/\S+/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function extractJobUrl(job = {}) {
+    const direct = job.link || job.url || job.description_url || '';
+    if (direct) return direct;
+
+    const haystack = [job.role, job.title, job.company, job.location, job.description]
+        .map(value => String(value || ''))
+        .join(' ');
+    return haystack.match(/https?:\/\/\S+/i)?.[0]?.replace(/[).,]+$/, '') || '#';
+}
+
+function normalizeJobForDisplay(job = {}) {
+    const rawTitle = String(job.role || job.title || '').trim();
+    const rawCompany = String(job.company || '').trim();
+    const rawLocation = String(job.location || '').trim();
+    const parts = rawTitle
+        .split('|')
+        .map(part => stripJobUrl(part).replace(/^at\s+/i, '').trim())
+        .filter(Boolean);
+
+    const title = stripJobUrl(parts[0] || rawTitle || 'Unknown Role') || 'Unknown Role';
+    const company = stripJobUrl(rawCompany || parts[1] || 'Unknown Company') || 'Unknown Company';
+    const location = stripJobUrl(rawLocation || parts[2] || 'Location unavailable') || 'Location unavailable';
+
+    return {
+        title,
+        company,
+        location,
+        link: extractJobUrl(job),
+    };
+}
+
+function cleanJobsSummaryText(value = '', fallback = '') {
+    const text = stripJobUrl(value || fallback);
+    if (!text) return fallback;
+
+    const [prefix, rest] = text.includes(':')
+        ? [text.slice(0, text.indexOf(':') + 1), text.slice(text.indexOf(':') + 1)]
+        : ['', text];
+    const parts = rest.split('|').map(part => part.trim()).filter(Boolean);
+
+    if (parts.length >= 2) {
+        return `${prefix ? `${prefix} ` : ''}${parts[0]} at ${parts[1]}${parts[2] ? ` - ${parts[2]}` : ''}`;
+    }
+
+    return text;
+}
+
 function renderJobsFeedSummary(feedMeta = {}) {
     const summary = feedMeta.summary || {};
     const roleMix = Array.isArray(summary.role_mix) ? summary.role_mix : Array.isArray(feedMeta.suggested_roles) ? feedMeta.suggested_roles : [];
 
-    if (jobsFeedHeadline) jobsFeedHeadline.textContent = summary.headline || 'Your best matches are ready.';
-    if (jobsFeedNote) jobsFeedNote.textContent = summary.note || 'Each card explains fit, gaps, and next steps.';
+    if (jobsFeedHeadline) jobsFeedHeadline.textContent = cleanJobsSummaryText(summary.headline, 'Your best matches are ready.');
+    if (jobsFeedNote) jobsFeedNote.textContent = stripJobUrl(summary.note) || 'Each card explains fit, gaps, and next steps.';
     if (jobsRoleMix) {
         jobsRoleMix.innerHTML = roleMix.length
-            ? roleMix.slice(0, 4).map(role => `<span class="jobs-role-chip">${sanitize(role)}</span>`).join('')
+            ? roleMix.slice(0, 4).map(role => `<span class="jobs-role-chip">${sanitize(stripJobUrl(role))}</span>`).join('')
             : '<span class="jobs-role-chip">Waiting</span>';
     }
-    if (jobsGapFocus) jobsGapFocus.textContent = summary.top_gap || '--';
-    if (jobsGapNote) jobsGapNote.textContent = summary.top_gap_note || 'Your main gap will show here.';
-    if (jobsBestMatch) jobsBestMatch.textContent = summary.best_match || '--';
-    if (jobsBestMatchNote) jobsBestMatchNote.textContent = summary.best_match_note || 'Your strongest match will show here.';
+    if (jobsGapFocus) jobsGapFocus.textContent = stripJobUrl(summary.top_gap) || '--';
+    if (jobsGapNote) jobsGapNote.textContent = stripJobUrl(summary.top_gap_note) || 'Your main gap will show here.';
+    if (jobsBestMatch) jobsBestMatch.textContent = stripJobUrl(summary.best_match) || '--';
+    if (jobsBestMatchNote) jobsBestMatchNote.textContent = stripJobUrl(summary.best_match_note) || 'Your strongest opening will show here.';
 }
 
 function renderJobs(jobs, feedMeta = {}) {
@@ -3385,16 +3439,17 @@ function renderJobs(jobs, feedMeta = {}) {
     }
 
     jobsContainer.innerHTML = latestJobsFeed.map((job, index) => {
-        const title = sanitize(job.role || job.title || 'Unknown Role');
-        const company = sanitize(job.company || 'Unknown Company');
-        const location = sanitize(job.location || 'Location unavailable');
+        const displayJob = normalizeJobForDisplay(job);
+        const title = sanitize(displayJob.title);
+        const company = sanitize(displayJob.company);
+        const location = sanitize(displayJob.location);
         const score = Number(job.match_score) || 0;
-        const why = sanitize(job.why_match || job.reason || 'This role aligns with your current resume strengths.');
-        const gap = sanitize(job.gap_summary || 'No major gap flagged.');
-        const improve = sanitize(job.improvement_plan || job.action_plan || 'Keep strengthening your strongest proof points.');
-        const link = job.link || job.url || '#';
+        const why = sanitize(stripJobUrl(job.why_match || job.reason || 'This role aligns with your current resume strengths.'));
+        const gap = sanitize(stripJobUrl(job.gap_summary || 'No major gap flagged.'));
+        const improve = sanitize(stripJobUrl(job.improvement_plan || job.action_plan || 'Keep strengthening your strongest proof points.'));
+        const link = displayJob.link;
         const fitBucket = sanitize(String(job.fit_bucket || 'close').replace(/\b\w/g, char => char.toUpperCase()));
-        const sourceRole = sanitize(job.source_role || '');
+        const sourceRole = sanitize(stripJobUrl(job.source_role || ''));
         const matchedSkills = Array.isArray(job.matched_skills) ? job.matched_skills.slice(0, 5) : [];
         const missingSkills = Array.isArray(job.missing_skills) ? job.missing_skills.slice(0, 5) : [];
 

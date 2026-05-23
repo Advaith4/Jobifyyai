@@ -15,3 +15,4 @@ appdirs
 python-jose[cryptography]
 bcrypt==4.0.1
 sqlmodel
+psycopg2-binary>=2.9.9
