@@ -1,202 +1,348 @@
-# Jobify.ai — AI Career Assistant
+# JobifyAI
 
-Jobify is an AI-powered career assistant that analyzes resumes, finds real job opportunities, improves resume quality, and helps with mock interviews.
-
-## Quick Start
-
-Prerequisites
-- Python 3.10+ (recommended)
-- Git (optional)
-- Optional: a PostgreSQL database (Supabase) if you want to persist users and applications
-
-Install and run (Windows PowerShell)
-
-```powershell
-python -m venv venv
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
-& "venv\Scripts\Activate.ps1"
-pip install -r requirements.txt
-```
-
-Run the app
-
-```powershell
-# Option A: run via uvicorn for autoreload
-uvicorn app:app --reload --host 127.0.0.1 --port 8000
-
-# Option B: run the packaged entrypoint
-python app.py
-```
-
-Visit the web UI: http://localhost:8000
-
-API docs (Swagger UI): http://localhost:8000/docs
-
-Static preview (quick):
-
-```powershell
-python -m http.server 9000 --directory static
-# then open http://localhost:9000
-```
-
-## Environment variables (.env)
-Create a `.env` file in the project root with the following variables (examples shown earlier in the repo):
-
-- `GROQ_API_KEY` — optional: Groq / external search API key
-- `RAPIDAPI_KEY` — optional: RapidAPI key for job search providers
-- `HF_TOKEN` — Hugging Face API token (if using HF router/model endpoints)
-- `MODEL_NAME` — Model identifier (if applicable) used by CrewAI/agents
-- `API_BASE_URL` — Optional alternate model router base URL
-- `DATABASE_URL` — Your Postgres connection string (Supabase example):
-	- Example: `postgresql://username:password@host:5432/postgres`
-	- Note: `database.py` auto-replaces `postgres://` with `postgresql://` when needed.
-
-If `DATABASE_URL` is not set, many endpoints will still run in a degraded mode (the app yields None session and returns friendly error messages).
-
-## Project Structure (high level)
-- `app.py` — FastAPI application and API routes
-- `static/` — Frontend (HTML, CSS, JS)
-- `templates/` — (not used) — frontend is static
-- `database.py` — SQLModel/engine setup and `get_session()` dependency
-- `models.py` — SQLModel domain models
-- `agents/` — CrewAI agents and helper scripts used by the AI pipelines
-- `requirements.txt` — Python dependencies
-- `Dockerfile` — container build instructions (basic)
-
-## Running with Docker
-Build and run the image (example):
-
-```bash
-docker build -t jobify:local .
-docker run -p 8000:8000 --env-file .env jobify:local
-```
-
-## Important Notes & Troubleshooting
-- Port already in use: If port 8000 is occupied, stop the other process or change the port when running `uvicorn`.
-- `psycopg2`/`psycopg2-binary`: The Postgres driver is required when `DATABASE_URL` points to Postgres. If you get `ModuleNotFoundError: No module named 'psycopg2'`, install `psycopg2-binary` in your environment.
-- Supabase/Postgres connection strings sometimes start with `postgres://` — `database.py` converts that to `postgresql://` for SQLAlchemy compatibility.
-- CrewAI and related ML dependencies are heavyweight; installation can take time and may require compiling native wheels on some platforms.
-- If you plan to use hosted models (Hugging Face, etc.), make sure `HF_TOKEN` and `API_BASE_URL` are set correctly.
-
-## Features
-- Real-time job search and ranked matches
-- Resume storage and automated text extraction
-- Auto-tailoring of resume bullets for tracked jobs
-- Interactive mock interview studio with scoring and feedback
-
-## Contributing
-- Fork, create a branch, and open a PR. Keep changes focused and include a short description of what you changed.
-
-## License
-See project root for license information (if any).
+![JobifyAI](https://img.shields.io/badge/Project-JobifyAI-blue?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Active-green?style=for-the-badge)
+![FastAPI](https://img.shields.io/badge/FastAPI-Stable-009688?style=for-the-badge)
+![CrewAI](https://img.shields.io/badge/CrewAI-Orchestration-purple?style=for-the-badge)
+![Database](https://img.shields.io/badge/Database-SQLModel%20%2F%20PostgreSQL-336791?style=for-the-badge)
 
 ---
-If you'd like, I can also add a short example showing how to call the `/api/jobs/feed/{user_id}` and `/api/interview/start` endpoints.
-- Select target roles and difficulty (1-10) to initiate a dynamic AI examiner.
-- The AI evaluates answers logically in real-time, assigning a score and formulating targeted follow-up questions autonomously.
+
+## Overview
+
+JobifyAI is an AI-powered career assistant that helps candidates analyze resumes, find relevant jobs, improve resume quality, and practice interviews with adaptive AI coaching.
+
+The application combines a FastAPI backend, a static web frontend, SQLModel-based persistence, CrewAI workflows, and Groq-powered language model inference. It is built as a practical full stack AI product with REST APIs, authenticated user flows, resume intelligence, job tracking, and interview preparation.
+
+---
+
+## Why This Project Matters
+
+- Helps candidates understand resume gaps and improve role alignment
+- Automates job discovery and resume tailoring for tracked applications
+- Provides realistic interview practice with scoring, follow-up questions, and coaching memory
+- Demonstrates production-oriented AI engineering with modular routes, database models, and agent workflows
+- Shows how LLM workflows can be connected to a usable full stack product
+
+---
+
+## Key Outcomes
+
+- Built an interactive Resume Lab with upload, analysis, rescoring, fixes, manual edits, and download support
+- Added AI job feed generation and application tracking with background resume tailoring
+- Implemented adaptive mock interview sessions with persisted history and coaching memory
+- Created JWT-based authentication with bcrypt password hashing
+- Added deployment configuration for Docker, Render, and Vercel static hosting
+
+---
+
+## Features
+
+- PDF resume upload and text extraction
+- Resume analysis with section scoring, gap detection, and improvement suggestions
+- One-click resume fixes and top-fix application flow
+- AI job feed based on resume content and user preferences
+- Job tracking with generated tailored resume bullets
+- Adaptive mock interview studio with difficulty control and interviewer personas
+- Resume-aware interview training based on weak areas
+- Career coach memory, score trends, and daily practice plan
+- Authenticated API access using JWT bearer tokens
+- Static dashboard UI served directly by FastAPI
 
 ---
 
 ## Tech Stack
 
-### Backend
-- Python 3.10+
-- FastAPI & Uvicorn (REST endpoints)
-- SQLModel/SQLite (Lightweight relational CRM tracking)
-- CrewAI (LLM Orchestration)
-- Groq-powered endpoints for massive multi-agent throughput
-
-### Frontend
-- Premium Glassmorphic Split-Pane UI (Vanilla HTML/CSS/JS)
-- Real-time client-side navigation (Dashboard, Feed, Studio, Tracker)
-- Dynamic DOM insertion & cache busting mechanisms
-
-### Utilities
-- pypdf
-- python-dotenv
-- requests
+| Layer | Technology |
+| --- | --- |
+| Frontend | HTML, CSS, JavaScript |
+| Backend | FastAPI, Uvicorn |
+| AI Orchestration | CrewAI |
+| LLM API | Groq API |
+| Jobs API | Jooble API, RapidAPI fallback |
+| Database | SQLModel with SQLite locally and PostgreSQL in production |
+| Auth | JWT, bcrypt |
+| Resume Parsing | pypdf |
+| Deployment | Docker, Render, Vercel |
 
 ---
 
-## Getting Started
+## System Architecture
 
-### 1. Clone the Repository
-```bash
-git clone https://github.com/Advaith4/JOBIFY.git
-cd JOBIFY
+```mermaid
+flowchart TD
+  UI[Static Web Frontend]
+  API[FastAPI Backend]
+  AUTH[JWT Auth]
+  RESUME[Resume Lab]
+  JOBS[Job Matching]
+  INTERVIEW[Interview Coach]
+  CREW[CrewAI Workflows]
+  LLM[Groq LLM]
+  DB[(SQLModel Database)]
+  EXT[Jooble / RapidAPI]
+
+  UI -->|REST requests| API
+  API --> AUTH
+  API --> RESUME
+  API --> JOBS
+  API --> INTERVIEW
+  RESUME --> CREW
+  JOBS --> CREW
+  INTERVIEW --> CREW
+  CREW --> LLM
+  JOBS --> EXT
+  API --> DB
 ```
 
-### 2. Set Up Virtual Environment
+---
+
+## Workflow Explanation
+
+1. A user registers or logs in through the web interface.
+2. The user uploads a PDF resume to the Resume Lab.
+3. FastAPI extracts resume text, stores it, and routes analysis tasks to AI workflow helpers.
+4. The resume analysis returns scores, section feedback, weak areas, and suggested fixes.
+5. The jobs workflow uses resume context and preferences to generate a ranked job feed.
+6. Tracked jobs trigger background resume-tailoring tasks.
+7. The interview workflow starts adaptive practice sessions using role, difficulty, persona, resume weaknesses, and coaching memory.
+8. SQLModel persists users, resumes, job applications, interview sessions, and career coach memory.
+
+---
+
+## API Endpoints
+
+FastAPI docs are available at:
+
+```text
+http://127.0.0.1:8000/api/docs
+```
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | `/api/health` | Service health check |
+| POST | `/api/auth/register` | Create user account and return JWT |
+| POST | `/api/auth/login` | Log in or migrate legacy user and return JWT |
+| POST | `/api/resume/upload` | Upload and parse a PDF resume |
+| GET | `/api/resume/lab` | Fetch current Resume Lab state |
+| POST | `/api/resume/analyze` | Analyze current resume for a target role |
+| POST | `/api/resume/rescore` | Re-score the current resume |
+| POST | `/api/resume/fixes/apply` | Apply a selected resume fix |
+| POST | `/api/resume/fixes/apply-top` | Apply the highest-priority resume fixes |
+| PUT | `/api/resume/text` | Update resume text manually |
+| POST | `/api/resume/reset` | Restore the original uploaded resume |
+| GET | `/api/resume/download` | Download improved resume text |
+| GET | `/api/jobs/feed` | Generate AI job feed for the current user |
+| POST | `/api/jobs/track` | Track a job and start resume tailoring |
+| GET | `/api/jobs/tracker` | Fetch tracked job applications |
+| POST | `/api/interview/start` | Start a general mock interview session |
+| POST | `/api/interview/start-from-resume` | Start a resume-aware mock interview |
+| POST | `/api/interview/answer` | Submit answer and receive feedback plus next question |
+| GET | `/api/interview/coach-memory` | Fetch long-term coaching memory |
+| GET | `/api/interview/daily-plan` | Generate daily interview practice plan |
+| GET | `/api/interview/modes` | List training modes and interviewer personas |
+| GET | `/api/interview/sessions` | List saved interview sessions |
+| GET | `/api/interview/sessions/{session_id}` | Fetch a saved interview session |
+| DELETE | `/api/interview/sessions/{session_id}` | Delete an interview session |
+
+---
+
+## Project Structure
+
+```text
+JobifyAI/
+|-- agents/                  # CrewAI agent definitions
+|-- data/                    # Local runtime data and CrewAI storage
+|-- docs/                    # Deployment and project documentation
+|-- src/
+|   |-- api/
+|   |   |-- routes/          # Auth, resume, jobs, and interview routes
+|   |   `-- dependencies.py  # Shared API dependencies
+|   |-- core/                # Security and exception handlers
+|   |-- database/            # SQLModel engine and migration helpers
+|   |-- models/              # Database models
+|   |-- config.py            # Environment-based app settings
+|   |-- main.py              # FastAPI application entry point
+|   `-- resume_lab.py        # Resume analysis and fix logic
+|-- static/                  # Frontend HTML, CSS, JS, and images
+|-- tasks/                   # CrewAI task definitions
+|-- tests/                   # API and Resume Lab tests
+|-- utils/                   # Resume parsing, job search, and scoring helpers
+|-- app.py                   # Compatibility entry point for uvicorn app:app
+|-- crew.py                  # Main AI workflow orchestration helpers
+|-- Dockerfile               # Backend container build
+|-- render.yaml              # Render deployment config
+|-- vercel.json              # Static frontend deployment config
+`-- requirements.txt         # Python dependencies
+```
+
+---
+
+## Installation
+
 ```bash
+git clone https://github.com/Advaith4/JobifyAI.git
+cd JobifyAI
+
 python -m venv venv
 ```
 
 Windows:
-```bash
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
 venv\Scripts\activate
-```
-
-macOS/Linux:
-```bash
-source venv/bin/activate
-```
-
-### 3. Install Dependencies
-```bash
 pip install -r requirements.txt
 ```
 
-### 4. Configure Environment Variables
-Create a `.env` file in the root directory:
+macOS/Linux:
 
-```env
-GROQ_API_KEY=your_groq_api_key
-JOOBLE_API_KEY=your_jooble_api_key
-JOOBLE_API_BASE_URL=https://in.jooble.org/api/{api_key}
-RAPIDAPI_KEY=your_rapidapi_key
-MODEL_NAME=meta-llama/Llama-3.1-8B-Instruct
-```
-
-`JOOBLE_API_KEY` is now the preferred jobs provider key. `RAPIDAPI_KEY` is optional and is only used as fallback for JSearch.
-`JOOBLE_API_BASE_URL` defaults to the India Jooble endpoint shown above.
-
-### 5. Run the Main App
 ```bash
-venv\Scripts\python.exe -m uvicorn app:app --host 127.0.0.1 --port 8000
+source venv/bin/activate
+pip install -r requirements.txt
 ```
-
-Open:
-`http://127.0.0.1:8000`
 
 ---
 
-## Run with Docker
-Build:
-```bash
-docker build -t jobify .
+## Environment Variables
+
+Create a `.env` file in the project root:
+
+```dotenv
+GROQ_API_KEY=<your-groq-api-key>
+JOOBLE_API_KEY=<your-jooble-api-key>
+JOOBLE_API_BASE_URL=https://in.jooble.org/api/{api_key}
+RAPIDAPI_KEY=<your-rapidapi-key>
+MODEL_NAME=llama-3.1-8b-instant
+DATABASE_URL=sqlite:///./jobify.db
+SECRET_KEY=<secure-random-secret-key>
+AUTO_CREATE_DB_SCHEMA=true
+DEBUG=false
 ```
 
-Run:
-```bash
-docker run --env-file .env -p 7860:7860 jobify
-```
+Notes:
 
-## Deploying Frontend to Vercel
+- `DATABASE_URL=sqlite:///./jobify.db` is enough for local development.
+- Use PostgreSQL for production deployments.
+- `JOOBLE_API_KEY` is the preferred jobs provider key.
+- `RAPIDAPI_KEY` is optional and used as a fallback for job search.
 
-This repository ships a static frontend in the `static/` directory. You can deploy it to Vercel as a standalone static site while hosting the API on Render (already configured in `render.yaml`).
+---
 
-Quick steps:
+## Usage
 
-- In Vercel, choose **Import Project** → select this repository.
-- Set the **Output Directory** to `static` (or rely on `vercel.json` included at the repo root).
-- Deploy. No build command is required for a plain static site.
-
-CLI alternative:
+Start the backend and frontend together:
 
 ```bash
-vercel login
-vercel --prod
+uvicorn app:app --reload --host 127.0.0.1 --port 8000
 ```
 
-Tip: Add the deployed Vercel frontend domain to `ALLOWED_ORIGINS` in your Render service environment variables so the backend accepts cross-origin requests.
+Open:
 
+```text
+http://127.0.0.1:8000
+```
+
+API documentation:
+
+```text
+http://127.0.0.1:8000/api/docs
+```
+
+Alternative local run:
+
+```bash
+python app.py
+```
+
+---
+
+## Docker Deployment
+
+```bash
+docker build -t jobifyai .
+docker run --env-file .env -p 8000:8000 jobifyai
+```
+
+---
+
+## Production Deployment
+
+This repository includes:
+
+- `render.yaml` for the FastAPI backend and PostgreSQL database on Render
+- `vercel.json` for deploying the static frontend from `static/`
+- `Dockerfile` for containerized backend deployment
+
+For Render, configure the required API keys as environment variables and deploy from the main branch.
+
+For Vercel, deploy the static frontend and set the backend API origin in your frontend configuration if needed.
+
+---
+
+## Screenshots
+
+### Login and Landing Screen
+
+![JobifyAI login and landing screen](docs/screenshots/jobify-home.png)
+
+Add more screenshots after loading sample resume and interview data:
+
+- Resume upload and dashboard
+- Resume Lab analysis output
+- Job matching feed and tracker
+- Interview preparation studio
+
+---
+
+## Demo Video
+
+Add a short walkthrough video showing:
+
+- Login
+- Resume upload
+- Resume analysis
+- Job matching
+- Mock interview session
+
+---
+
+## Challenges Solved
+
+- Connected resume analysis, job discovery, and interview coaching into one workflow
+- Separated API route logic from reusable AI workflow helpers
+- Persisted resume state, interview history, job tracking, and coach memory
+- Added background resume tailoring so tracked jobs do not block the API response
+- Built local and production database support with lightweight migration helpers
+
+---
+
+## Future Enhancements
+
+- Add recruiter-facing dashboards and candidate comparison views
+- Support DOCX resume parsing in addition to PDF
+- Add OAuth login and profile management
+- Improve analytics for interview progress and job application outcomes
+- Add automated email reminders for daily practice plans
+- Expand integrations with external ATS and job board APIs
+
+---
+
+## Contribution Guidelines
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/<name>`
+3. Commit changes: `git commit -m "Add <feature>"`
+4. Push branch: `git push origin feature/<name>`
+5. Open a pull request with a clear summary and testing notes
+
+---
+
+## Author
+
+**Advaith G**<br>
+AI Engineer & Full Stack Developer
+
+- GitHub: [https://github.com/Advaith4](https://github.com/Advaith4)
+- Portfolio: [https://advaith-g.vercel.app](https://advaith-g.vercel.app)
+- LinkedIn: [https://linkedin.com/in/advaith-g](https://linkedin.com/in/advaith-g)
