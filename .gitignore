@@ -6,3 +6,5 @@ data/
 *.db
 scratch*.py
 *.log
+
+.vercel

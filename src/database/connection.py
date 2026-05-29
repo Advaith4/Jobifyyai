@@ -6,9 +6,20 @@ from src.config import settings
 
 logger = logging.getLogger(__name__)
 
-_db_url = settings.DATABASE_URL
-if _db_url.startswith("postgres://"):
-    _db_url = _db_url.replace("postgres://", "postgresql://", 1)
+
+def _normalize_db_url(url: str) -> str:
+    url = (url or "").strip()
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql://", 1)
+
+    sslmode = os.getenv("PGSSLMODE", "").strip()
+    if sslmode and "sslmode=" not in url.lower() and url.startswith("postgresql://"):
+        url = f"{url}{'&' if '?' in url else '?'}sslmode={sslmode}"
+
+    return url
+
+
+_db_url = _normalize_db_url(settings.DATABASE_URL)
 
 # connect_args only needed for SQLite
 _connect_args = {"check_same_thread": False} if _db_url.startswith("sqlite") else {}

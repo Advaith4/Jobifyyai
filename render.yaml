@@ -13,7 +13,7 @@ services:
       - key: AUTO_CREATE_DB_SCHEMA
         value: true
       - key: DATABASE_URL
-        sync: false
+        fromDatabase: jobify-db
       - key: GROQ_API_KEY
         sync: false
       - key: JOOBLE_API_KEY
@@ -24,3 +24,9 @@ services:
         sync: false
       - key: MODEL_NAME
         value: llama-3.1-8b-instant
+
+  - type: postgres
+    name: jobify-db
+    plan: starter
+    databaseName: jobify
+    disk: 10
