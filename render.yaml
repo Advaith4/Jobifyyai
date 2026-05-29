@@ -26,7 +26,8 @@ services:
         value: llama-3.1-8b-instant
 
 databases:
-  - name: jobify-db
+  - type: postgres
+    name: jobify-db
     plan: starter
     databaseName: jobify
     disk: 10
