@@ -358,4 +358,4 @@ AI Engineer & Full Stack Developer
 
 - GitHub: [https://github.com/Advaith4](https://github.com/Advaith4)
 - Portfolio: [https://advaith-g.vercel.app](https://advaith-g.vercel.app)
-- LinkedIn: [https://www.linkedin.com/in/advaith-g-771800300](https://www.linkedin.com/in/advaith-g-771800300)
+
