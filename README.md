@@ -282,16 +282,29 @@ For Vercel, deploy the static frontend and set the backend API origin in your fr
 
 ## Screenshots
 
-### Login and Landing Screen
+### Login and Landing
 
 ![JobifyAI login and landing screen](docs/screenshots/jobify-home.png)
 
-Add more screenshots after loading sample resume and interview data:
+### Resume Upload
 
-- Resume upload and dashboard
-- Resume Lab analysis output
-- Job matching feed and tracker
-- Interview preparation studio
+![JobifyAI resume upload screen](docs/screenshots/resume-upload.png)
+
+### Dashboard Overview
+
+![JobifyAI dashboard overview](docs/screenshots/dashboard-overview.png)
+
+### Resume Fix Summary
+
+![JobifyAI dashboard fix summary](docs/screenshots/dashboard-fixes.png)
+
+### Resume Lab
+
+![JobifyAI resume lab analysis](docs/screenshots/resume-lab.png)
+
+### Mock Interview
+
+![JobifyAI mock interview studio](docs/screenshots/mock-interview.png)
 
 ---
 
