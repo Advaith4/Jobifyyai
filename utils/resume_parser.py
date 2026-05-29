@@ -36,24 +36,10 @@ def clean_text(text):
 
 
 def _extract_best_page_text(page) -> str:
-    layout_text = ""
-    plain_text = ""
-
     try:
-        layout_text = page.extract_text(extraction_mode="layout") or ""
+        return page.extract_text() or ""
     except Exception:
-        layout_text = ""
-
-    try:
-        plain_text = page.extract_text(extraction_mode="plain") or page.extract_text() or ""
-    except Exception:
-        plain_text = ""
-
-    candidates = [candidate for candidate in (layout_text, plain_text) if candidate and candidate.strip()]
-    if not candidates:
         return ""
-
-    return max(candidates, key=_page_text_quality_score)
 
 
 def _page_text_quality_score(text: str) -> float:

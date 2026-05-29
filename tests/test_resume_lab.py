@@ -106,6 +106,7 @@ Worked on chatbot project
     assert issues
     assert all(issue["original"] in text for issue in issues)
     assert all(issue["improved"] for issue in issues)
+    assert any(issue["action_type"] == "manual" for issue in issues)
 
 
 def test_apply_fix_replaces_exact_text_once():
@@ -114,12 +115,65 @@ def test_apply_fix_replaces_exact_text_once():
         "id": "abc123",
         "section": "projects",
         "original": "Worked on chatbot project",
-        "improved": "Developed a chatbot project, clarifying ownership, tools used, and project outcome.",
+        "improved": "Contributed to chatbot project.",
     }
 
     result = apply_fix(current, issue, [])
 
     assert result["applied"] is True
     assert "Worked on chatbot project" not in result["current_resume"]
-    assert "Developed a chatbot project" in result["current_resume"]
+    assert "Contributed to chatbot project" in result["current_resume"]
     assert result["applied_fixes"][0]["issue_id"] == "abc123"
+
+
+def test_validate_analysis_converts_invented_metrics_to_manual_guidance():
+    text = """
+Projects
+Worked on chatbot project
+Skills
+Python
+"""
+    payload = {
+        "score": 70,
+        "breakdown": {"impact": 50, "clarity": 70, "structure": 70, "ats": 70},
+        "sections": [
+            {
+                "section": "projects",
+                "issues": [
+                    {
+                        "original": "Worked on chatbot project",
+                        "problem": "Missing impact.",
+                        "improved": "Developed a chatbot that reduced support tickets by 35%.",
+                        "action_type": "replace",
+                        "severity": "high",
+                        "category": "impact",
+                    }
+                ],
+            }
+        ],
+        "summary_feedback": {"strengths": [], "weaknesses": [], "priority_fixes": []},
+    }
+
+    analysis = validate_resume_analysis(payload, text, parse_resume(text))
+    issue = analysis["sections"][0]["issues"][0]
+
+    assert issue["action_type"] == "manual"
+    assert "35" not in issue["improved"]
+    assert issue["evidence_needed"]
+
+
+def test_apply_fix_refuses_manual_guidance():
+    current = "Projects\nWorked on chatbot project"
+    issue = {
+        "id": "manual123",
+        "section": "projects",
+        "original": "Worked on chatbot project",
+        "improved": "Manual edit needed: add verified scope and outcome.",
+        "action_type": "manual",
+    }
+
+    result = apply_fix(current, issue, [])
+
+    assert result["applied"] is False
+    assert result["current_resume"] == current
+    assert "verified details" in result["message"]

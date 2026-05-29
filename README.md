@@ -180,3 +180,23 @@ Run:
 ```bash
 docker run --env-file .env -p 7860:7860 jobify
 ```
+
+## Deploying Frontend to Vercel
+
+This repository ships a static frontend in the `static/` directory. You can deploy it to Vercel as a standalone static site while hosting the API on Render (already configured in `render.yaml`).
+
+Quick steps:
+
+- In Vercel, choose **Import Project** → select this repository.
+- Set the **Output Directory** to `static` (or rely on `vercel.json` included at the repo root).
+- Deploy. No build command is required for a plain static site.
+
+CLI alternative:
+
+```bash
+vercel login
+vercel --prod
+```
+
+Tip: Add the deployed Vercel frontend domain to `ALLOWED_ORIGINS` in your Render service environment variables so the backend accepts cross-origin requests.
+

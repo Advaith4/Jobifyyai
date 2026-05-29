@@ -131,10 +131,13 @@ class ResumeIssue(BaseModel):
     original: str
     problem: str
     improved: str
-    action_type: Literal["replace"] = "replace"
+    action_type: Literal["replace", "manual"] = "replace"
     severity: Literal["high", "medium", "low"] = "medium"
     category: str = "clarity"
     status: Literal["open", "applied", "missing"] = "open"
+    insight: str = ""
+    guidance: str = ""
+    evidence_needed: list[str] = Field(default_factory=list)
 
 
 class ResumeSectionAnalysis(BaseModel):
@@ -423,6 +426,15 @@ def apply_fix(
     applied_fixes = list(applied_fixes or [])
     issue_id = issue.get("id") or _issue_id(issue.get("section", "resume"), issue.get("original", ""), issue.get("improved", ""))
 
+    if issue.get("action_type") == "manual":
+        return {
+            "applied": False,
+            "status": "open",
+            "current_resume": current_resume,
+            "applied_fixes": applied_fixes,
+            "message": "This recommendation needs your verified details. Open Edit Mode and add only facts you can prove.",
+        }
+
     if any(item.get("issue_id") == issue_id for item in applied_fixes):
         return {
             "applied": False,
@@ -692,17 +704,183 @@ def _normalize_issue(
         severity = "medium"
 
     category = str(item.get("category", "clarity")).strip().lower() if isinstance(item, dict) else "clarity"
+    guarded = _truth_guard_issue(
+        original=original,
+        improved=improved,
+        problem=problem or _problem_for_bullet(original),
+        section_name=section_name,
+        resume_text=resume_text,
+        category=category or "clarity",
+        severity=severity,
+    )
     issue = {
-        "id": str(item.get("id") or _issue_id(section_name, original, improved)) if isinstance(item, dict) else _issue_id(section_name, original, improved),
+        "id": str(item.get("id") or _issue_id(section_name, original, guarded["improved"])) if isinstance(item, dict) else _issue_id(section_name, original, guarded["improved"]),
         "original": original,
-        "problem": problem or _problem_for_bullet(original),
-        "improved": improved,
-        "action_type": "replace",
-        "severity": severity,
-        "category": category or "clarity",
+        "problem": guarded["problem"],
+        "improved": guarded["improved"],
+        "action_type": guarded["action_type"],
+        "severity": guarded["severity"],
+        "category": guarded["category"],
         "status": "open",
+        "insight": guarded["insight"],
+        "guidance": guarded["guidance"],
+        "evidence_needed": guarded["evidence_needed"],
     }
     return issue
+
+
+def _truth_guard_issue(
+    *,
+    original: str,
+    improved: str,
+    problem: str,
+    section_name: str,
+    resume_text: str,
+    category: str,
+    severity: str,
+) -> dict[str, Any]:
+    original_clean = _strip_bullet(original).strip()
+    improved_clean = _strip_bullet(improved).strip()
+    problem_clean = problem.strip() or _problem_for_bullet(original_clean)
+    evidence_needed = _evidence_needed_for_problem(problem_clean, original_clean, section_name)
+    invented = _looks_invented(original_clean, improved_clean, resume_text)
+    needs_evidence = bool(evidence_needed) or invented
+
+    if needs_evidence:
+        guarded_problem = problem_clean
+        if invented and not evidence_needed:
+            guarded_problem = (
+                f"{problem_clean} The suggested rewrite appeared to add unverified facts, so Jobify converted it into a manual evidence check."
+            )
+        return {
+            "problem": guarded_problem,
+            "improved": _manual_guidance_text(original_clean, evidence_needed, section_name),
+            "action_type": "manual",
+            "severity": "high" if severity == "high" or invented else severity,
+            "category": _category_for_problem(problem_clean, category),
+            "insight": _insight_for_problem(problem_clean, original_clean, section_name),
+            "guidance": "Do not paste fabricated numbers or outcomes. Add a detail only if you can defend it in an interview.",
+            "evidence_needed": evidence_needed or ["verified scope", "tools actually used", "real outcome"],
+        }
+
+    safe_rewrite = _safe_rewrite(original_clean)
+    if safe_rewrite.strip().lower() == original_clean.strip().lower():
+        safe_rewrite = improved_clean
+
+    return {
+        "problem": problem_clean,
+        "improved": safe_rewrite.rstrip(".") + ".",
+        "action_type": "replace",
+        "severity": severity,
+        "category": _category_for_problem(problem_clean, category),
+        "insight": _insight_for_problem(problem_clean, original_clean, section_name),
+        "guidance": "Safe wording polish only; no new facts were added.",
+        "evidence_needed": [],
+    }
+
+
+def _looks_invented(original: str, improved: str, resume_text: str) -> bool:
+    if not improved:
+        return True
+
+    original_numbers = set(re.findall(r"\b\d+(?:\.\d+)?%?\b", original))
+    improved_numbers = set(re.findall(r"\b\d+(?:\.\d+)?%?\b", improved))
+    if improved_numbers - original_numbers:
+        return True
+
+    original_lower = original.lower()
+    improved_lower = improved.lower()
+    resume_lower = resume_text.lower()
+    result_claims = (
+        "reduced", "increased", "boosted", "improved", "accelerated", "saved",
+        "generated", "grew", "cut", "raised", "lowered", "drove",
+    )
+    if any(word in improved_lower and word not in original_lower for word in result_claims):
+        if not re.search(r"\b(result|outcome|impact|improved|reduced|increased|saved|optimized)\b", original_lower):
+            return True
+
+    improved_terms = _meaningful_terms(improved)
+    original_resume_terms = _meaningful_terms(f"{original} {resume_text}")
+    new_terms = improved_terms - original_resume_terms
+    if len(new_terms) >= 3:
+        return True
+
+    return False
+
+
+def _meaningful_terms(text: str) -> set[str]:
+    words = {
+        word.lower()
+        for word in re.findall(r"[A-Za-z][A-Za-z0-9+.#-]{2,}", text)
+        if len(word) >= 4
+    }
+    stop = RESUME_WORD_LEXICON | {
+        "using", "with", "from", "that", "this", "into", "across", "through",
+        "within", "while", "their", "your", "candidate", "resume",
+    }
+    return {word for word in words if word not in stop}
+
+
+def _evidence_needed_for_problem(problem: str, original: str, section_name: str) -> list[str]:
+    text = f"{problem} {original}".lower()
+    needed: list[str] = []
+    if re.search(r"metric|measurable|quant|scope|impact|outcome|result|scale", text):
+        needed.extend(["verified scope", "measurable result if available", "what changed after the work"])
+    if re.search(r"tool|technology|keyword|ats|stack|skill", text):
+        needed.append("tools or skills you actually used")
+    if re.search(r"ownership|role|responsibil|contribution|vague", text):
+        needed.append("your exact responsibility")
+    if section_name == "summary":
+        needed.extend(["target role", "two verified strengths", "one real project/domain proof"])
+    if section_name == "skills":
+        needed.append("only technologies you have used in coursework, projects, internships, or work")
+    return _dedupe(needed)[:5]
+
+
+def _manual_guidance_text(original: str, evidence_needed: list[str], section_name: str) -> str:
+    evidence = ", ".join(evidence_needed[:4]) if evidence_needed else "verified scope, tools, and outcome"
+    if section_name == "summary":
+        return (
+            "Manual rewrite: Write 2-3 lines with your target role, verified strengths, and one real proof point. "
+            f"Use only facts from your experience. Evidence to add: {evidence}."
+        )
+    if section_name == "skills":
+        return (
+            "Manual edit: Add a Skills section grouped by real tools you can discuss. "
+            f"Evidence to add: {evidence}."
+        )
+    return (
+        f"Manual edit needed: keep the original claim, then add only verified detail ({evidence}). "
+        "If you do not have a number, describe scope honestly, such as module, feature, user group, team size, or outcome observed."
+    )
+
+
+def _insight_for_problem(problem: str, original: str, section_name: str) -> str:
+    problem_lower = problem.lower()
+    if "measurable" in problem_lower or "impact" in problem_lower or "metric" in problem_lower:
+        return "Recruiters can see the task, but not the weight of the work. The fix is evidence, not decoration."
+    if "weak opening" in problem_lower:
+        return "The first verb undersells the contribution, so the line reads passive during a quick scan."
+    if "too short" in problem_lower:
+        return "The line is too thin to prove context, ownership, or outcome."
+    if "too long" in problem_lower:
+        return "The line asks the reader to hold too much at once; split the idea so the strongest evidence is visible."
+    if section_name == "summary":
+        return "The summary should position you quickly; vague summaries are usually skipped."
+    if section_name == "skills":
+        return "A skills section helps ATS matching only when it contains real, defensible keywords."
+    return "This line can be clearer without changing the underlying facts."
+
+
+def _category_for_problem(problem: str, fallback: str) -> str:
+    lowered = problem.lower()
+    if re.search(r"metric|measurable|impact|outcome|result|scale", lowered):
+        return "impact"
+    if re.search(r"ats|keyword|skill|tool|technology", lowered):
+        return "ats"
+    if re.search(r"too long|too short|structure|split", lowered):
+        return "structure"
+    return fallback or "clarity"
 
 
 def _normalize_summary_feedback(value: Any, sections: list[dict[str, Any]], score: int) -> dict[str, list[str]]:
@@ -733,53 +911,77 @@ def _fallback_analysis(resume_text: str, parsed_resume: dict[str, Any], source: 
             problems = _detect_bullet_problems(bullet)
             if not problems:
                 continue
-            improved = _rewrite_bullet(bullet)
-            if improved == bullet:
+            guarded = _truth_guard_issue(
+                original=bullet,
+                improved=_rewrite_bullet(bullet),
+                problem="; ".join(problems),
+                section_name=section_name,
+                resume_text=resume_text,
+                category="impact",
+                severity="high" if "measurable" in " ".join(problems).lower() else "medium",
+            )
+            if guarded["action_type"] == "replace" and guarded["improved"] == bullet:
                 continue
-            severity = "high" if "measurable" in " ".join(problems).lower() else "medium"
             issues_by_section[section_name].append(
                 {
-                    "id": _issue_id(section_name, bullet, improved),
+                    "id": _issue_id(section_name, bullet, guarded["improved"]),
                     "original": bullet,
-                    "problem": "; ".join(problems),
-                    "improved": improved,
-                    "action_type": "replace",
-                    "severity": severity,
-                    "category": "impact",
+                    "problem": guarded["problem"],
+                    "improved": guarded["improved"],
+                    "action_type": guarded["action_type"],
+                    "severity": guarded["severity"],
+                    "category": guarded["category"],
                     "status": "open",
+                    "insight": guarded["insight"],
+                    "guidance": guarded["guidance"],
+                    "evidence_needed": guarded["evidence_needed"],
                 }
             )
 
     summary = parsed_resume.get("summary", "")
     if summary and len(summary.split()) < 18:
         improved = _rewrite_summary(summary)
+        guarded = _truth_guard_issue(
+            original=summary,
+            improved=improved,
+            problem="Summary is too short to communicate target role, verified strengths, and proof.",
+            section_name="summary",
+            resume_text=resume_text,
+            category="clarity",
+            severity="medium",
+        )
         issues_by_section["summary"].append(
             {
-                "id": _issue_id("summary", summary, improved),
+                "id": _issue_id("summary", summary, guarded["improved"]),
                 "original": summary,
-                "problem": "Summary is too short to communicate role, strengths, and career direction.",
-                "improved": improved,
-                "action_type": "replace",
-                "severity": "medium",
-                "category": "clarity",
+                "problem": guarded["problem"],
+                "improved": guarded["improved"],
+                "action_type": guarded["action_type"],
+                "severity": guarded["severity"],
+                "category": guarded["category"],
                 "status": "open",
+                "insight": guarded["insight"],
+                "guidance": guarded["guidance"],
+                "evidence_needed": guarded["evidence_needed"],
             }
         )
 
     if not parsed_resume.get("skills"):
         first_line = _fallback_summary(clean_resume_text(resume_text).splitlines())
         if first_line:
-            improved = first_line + "\n\nSkills: Add your strongest tools, languages, frameworks, and platforms as comma-separated keywords."
             issues_by_section["skills"].append(
                 {
-                    "id": _issue_id("skills", first_line, improved),
+                    "id": _issue_id("skills", first_line, "manual-skills"),
                     "original": first_line,
-                    "problem": "No clear skills section was detected, which can reduce ATS keyword matching.",
-                    "improved": improved,
-                    "action_type": "replace",
+                    "problem": "No clear skills section was detected, which can reduce ATS keyword matching. Add only tools you have actually used.",
+                    "improved": _manual_guidance_text(first_line, _evidence_needed_for_problem("skills ats tools", first_line, "skills"), "skills"),
+                    "action_type": "manual",
                     "severity": "high",
                     "category": "ats",
                     "status": "open",
+                    "insight": _insight_for_problem("skills ats tools", first_line, "skills"),
+                    "guidance": "Do not add trendy keywords unless you can explain where you used them.",
+                    "evidence_needed": _evidence_needed_for_problem("skills ats tools", first_line, "skills"),
                 }
             )
 
@@ -887,11 +1089,15 @@ def _problem_for_bullet(bullet: str) -> str:
 
 
 def _rewrite_bullet(bullet: str) -> str:
+    return _safe_rewrite(bullet)
+
+
+def _safe_rewrite(bullet: str) -> str:
     stripped = _strip_bullet(bullet).rstrip(".")
     lowered = stripped.lower()
 
     replacements = {
-        "worked on": "Developed",
+        "worked on": "Contributed to",
         "responsible for": "Owned",
         "helped with": "Supported",
         "helped": "Supported",
@@ -914,9 +1120,6 @@ def _rewrite_bullet(bullet: str) -> str:
     if first_word not in ACTION_VERBS and first_word not in {"supported", "owned", "completed", "contributed", "applied"}:
         rewritten = "Delivered " + rewritten[:1].lower() + rewritten[1:]
 
-    if not re.search(r"\d|%|\busers?\b|\bclients?\b|\brequests?\b|\bseconds?\b|\bhours?\b|\bteam\b", rewritten.lower()):
-        rewritten += ", clarifying the tools used, scope, and outcome"
-
     return rewritten.rstrip(".") + "."
 
 
@@ -925,8 +1128,7 @@ def _rewrite_summary(summary: str) -> str:
     if len(stripped.split()) >= 18:
         return stripped + "."
     return (
-        f"{stripped}. Software candidate with hands-on project experience, clear technical strengths, "
-        "and a focus on building reliable, user-centered solutions."
+        f"{stripped}. Add your target role, two verified strengths, and one real project or work proof point."
     )
 
 

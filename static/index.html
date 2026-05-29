@@ -6,7 +6,7 @@
     <title>Jobify.ai | Next-Gen Career CRM</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&family=Source+Serif+4:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=20260518">
+    <link rel="stylesheet" href="style.css?v=20260529">
 </head>
 <body>
     <div class="noise"></div>
@@ -20,12 +20,12 @@
             <div class="login-panel">
                 <div class="login-panel-inner">
                     <div class="login-brand">
-                        <i class="fa-solid fa-bolt gradient-text"></i> Jobify<span class="gradient-text">.ai</span>
+                        <i class="fa-solid fa-briefcase gradient-text"></i> Jobify<span class="gradient-text">.ai</span>
                     </div>
                     
                     <div class="login-headings">
-                        <h1 class="welcome-text">Welcome back.</h1>
-                        <p class="subtitle">Your AI-powered career accelerator.</p>
+                        <h1 class="welcome-text">Career command center.</h1>
+                        <p class="subtitle">Track roles, sharpen resumes, and rehearse interviews from one focused workspace.</p>
                     </div>
                     
                     <form id="modern-login-form" class="modern-form">
@@ -60,14 +60,7 @@
                             <span>Sign In</span> <i class="fa-solid fa-arrow-right"></i>
                         </button>
                         
-                        <div class="auth-divider">
-                            <span>or continue with</span>
-                        </div>
-                        
-                        <button type="button" class="btn-social-outline">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google">
-                            <span>Sign in with Google</span>
-                        </button>
+
                     </form>
                     
                     <p class="signup-prompt">
@@ -87,8 +80,8 @@
                         <span class="animated-stat" id="resumes-analyzed">24,103 resumes analyzed today</span>
                     </div>
                     
-                    <h2 class="visual-title">Supercharge your career trajectory.</h2>
-                    <p class="visual-subtitle">Our autonomous agents scan thousands of roles, matching your unique skills to the perfect opportunities in real-time.</p>
+                    <h2 class="visual-title">JOBIFY.AI</h2>
+                    <p class="visual-subtitle">A calm, professional cockpit for finding better jobs and proving you are ready for them.</p>
                     
                     <!-- Premium Glass Morphic Mock Dashboard -->
                     <div class="mock-dash glass-card">
@@ -96,7 +89,7 @@
                             <div class="mock-dots">
                                 <span class="mdot r"></span><span class="mdot y"></span><span class="mdot g"></span>
                             </div>
-                            <span class="mock-title">AI Engine Activity</span>
+                            <span class="mock-title">System Activity</span>
                         </div>
                         <div class="mock-body">
                             <div class="mock-item anim-1">
@@ -124,7 +117,7 @@
         <section class="upload-wrapper">
             <div class="content-center">
                 <h1 class="headline-large">Store your resume,<br><span class="gradient-text">permanently.</span></h1>
-                <p class="subtitle mt-3">We securely extract your profile into our Supabase vector engine. Our AI reads it to hunt for jobs daily.</p>
+                <p class="subtitle mt-3">We securely extract your profile into our database to hunt for jobs daily.</p>
                 
                 <div class="upload-dropzone glass-card mt-5" id="drop-zone">
                     <input type="file" id="file-input" accept="application/pdf" hidden>
@@ -153,7 +146,7 @@
         <div class="loader-wrapper">
             <div class="modern-spinner"></div>
             <h2 id="loading-text" class="gradient-text loader-text">Processing...</h2>
-            <p class="loader-sub">Orchestrating AI pipeline operations</p>
+            <p class="loader-sub">Orchestrating pipeline operations</p>
         </div>
     </div>
 
@@ -166,7 +159,7 @@
             </div>
             
             <div class="nav-links">
-                <button class="tab active" data-pane="pane-coach"><i class="fa-solid fa-compass"></i> AI Coach</button>
+                <button class="tab active" data-pane="pane-coach"><i class="fa-solid fa-compass"></i> Dashboard</button>
                 <button class="tab" data-pane="pane-jobs"><i class="fa-solid fa-layer-group"></i> Feed</button>
                 <button class="tab" data-pane="pane-resume"><i class="fa-solid fa-file-lines"></i> Resume Lab</button>
                 <button class="tab" data-pane="pane-tracker"><i class="fa-solid fa-list-check"></i> Tracker</button>
@@ -182,208 +175,95 @@
         <section class="content-area">
             <div class="dashboard-viewport" id="scrollable-viewport">
             <div id="pane-coach" class="pane active fade-in">
-                <div class="coach-shell">
-                    <section class="coach-hero glass-card">
-                        <div class="coach-hero-left">
-                            <div class="coach-hero-copy">
-                                <div class="section-label"><i class="fa-solid fa-compass"></i> Career Coach</div>
-                                <h2>One place to improve your resume and interview skills.</h2>
-                                <p class="muted-copy">Start practice when you’re ready. Fix the resume when your confidence dips.</p>
-                            </div>
-                            <div class="coach-hero-actions">
-                                <button class="btn-modern-primary coach-primary-cta" id="coach-start-interview-btn">
-                                    <i class="fa-solid fa-microphone-lines"></i> Start Practice
-                                </button>
-                                <button class="btn-outline coach-secondary-cta" id="coach-fix-resume-btn">
-                                    Fix Resume
-                                </button>
+                <div class="dashboard-viewport" style="max-width: 1200px; margin: 0 auto; padding-top: 3rem; padding-bottom: 5rem;">
+                    
+                    <!-- Hero Section Split Layout -->
+                    <div class="grid-card-layout mb-5" style="grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center;">
+                        <div class="hero-left animate-fade-up">
+                            <div class="section-label" style="display: inline-block; padding: 0.35rem 1rem; border-radius: 4px; background: #111112; border: 1px solid var(--border); color: var(--primary); font-size: 0.85rem; font-weight: 700; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 1px;"><i class="fa-solid fa-microchip"></i> System Core Active</div>
+                            <h2 style="font-size: 3.5rem; font-weight: 900; line-height: 1.1; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: -1.5px;">Welcome back.<br><span style="color: var(--primary);">Optimize your trajectory.</span></h2>
+                            <p class="subtitle" style="font-size: 1.2rem; margin-bottom: 2.5rem; line-height: 1.6;">Here is your overall professional readiness overview based on our deep ATS indexing algorithms and Senior Recruiter logic.</p>
+                            
+                            <div class="glass-card" style="padding: 2rem; background: #0b0b0c; border: 1px solid var(--border); border-left: 4px solid var(--primary); border-radius: 4px;">
+                                <h3 class="headline" style="font-size: 1.25rem; margin-bottom: 0.5rem; color: #fff; opacity: 0.8; text-transform: uppercase;">Profile Strength Index</h3>
+                                <div style="display: flex; align-items: flex-end; gap: 1rem; margin-bottom: 0.5rem;">
+                                    <span id="dash-summary-strength" style="font-size: 3.5rem; font-weight: 900; color: var(--primary); line-height: 1;">Analyzing...</span>
+                                </div>
+                                <p id="dash-summary-desc" class="subtitle" style="font-size: 1rem;">Complete a resume analysis to unlock your full profile summary.</p>
                             </div>
                         </div>
-
-                        <aside class="coach-hero-right glass-card">
-                            <div class="health-head">
-                                <div>
-                                    <div class="section-label"><i class="fa-solid fa-heart-pulse"></i> Resume Health Engine</div>
-                                    <h3 class="health-title">Diagnosis</h3>
-                                </div>
-                                <span class="health-badge" id="resume-health-badge">--</span>
+                        
+                        <div class="hero-right animate-fade-up delay-100" style="position: relative;">
+                            <div class="glass-card" style="padding: 1rem; border-color: var(--border); border-radius: 4px; position: relative; overflow: hidden; background: #0b0b0c;">
+                                <img src="images/bg_ai.png" alt="AI Analysis Engine" style="width: 100%; height: auto; display: block; border-radius: 2px; filter: contrast(1.2) brightness(0.8) saturate(1.2);">
+                                <div class="scanner-line" style="position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--primary); animation: scan 4s infinite linear;"></div>
                             </div>
-
-                            <div class="health-metrics">
-                                <div class="health-metric">
-                                    <span>Strength</span>
-                                    <strong id="resume-strength">--</strong>
-                                </div>
-                                <div class="health-metric">
-                                    <span>Critical issues</span>
-                                    <strong id="resume-critical-count">--</strong>
-                                </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Detailed SWOT -->
+                    <h3 class="headline animate-fade-up delay-200" style="font-size: 2.2rem; margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; text-transform: uppercase; letter-spacing: -1px;">Recruiter SWOT Analysis</h3>
+                    <div class="grid-card-layout mb-5 animate-fade-up delay-200" style="grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem;">
+                        
+                        <div class="glass-card" style="padding: 2.5rem; border-radius: 4px; border: 1px solid var(--border); border-top: 4px solid var(--success); display: flex; flex-direction: column; background: #0b0b0c;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+                                <div class="section-label" style="font-size: 1.4rem; font-weight: 900; color: #fff; text-transform: uppercase;"><i class="fa-solid fa-arrow-trend-up text-success" style="margin-right: 0.5rem; color: var(--success);"></i> Top Strengths</div>
                             </div>
+                            <p style="font-size: 1rem; color: var(--text-secondary); margin-bottom: 2rem; line-height: 1.6;">These traits heavily index positive signals for Applicant Tracking Systems and hiring managers. They represent your core market value.</p>
+                            <ul id="dash-strengths-list" style="list-style: none; display: flex; flex-direction: column; gap: 1.25rem; flex-grow: 1;">
+                                <li class="empty-state">No data yet. Run Resume Lab.</li>
+                            </ul>
+                        </div>
 
-                            <div class="health-breakdown" id="resume-health-breakdown" role="list">
-                                <button type="button" class="health-row" data-health-area="formatting" role="listitem">
-                                    <span class="health-icon" aria-hidden="true"></span>
-                                    <span class="health-label">Formatting</span>
-                                    <span class="health-status"></span>
-                                </button>
-                                <button type="button" class="health-row" data-health-area="metrics" role="listitem">
-                                    <span class="health-icon" aria-hidden="true"></span>
-                                    <span class="health-label">Metrics</span>
-                                    <span class="health-status"></span>
-                                </button>
-                                <button type="button" class="health-row" data-health-area="keywords" role="listitem">
-                                    <span class="health-icon" aria-hidden="true"></span>
-                                    <span class="health-label">Keywords</span>
-                                    <span class="health-status"></span>
-                                </button>
-                                <button type="button" class="health-row" data-health-area="structure" role="listitem">
-                                    <span class="health-icon" aria-hidden="true"></span>
-                                    <span class="health-label">Structure</span>
-                                    <span class="health-status"></span>
-                                </button>
+                        <div class="glass-card" style="padding: 2.5rem; border-radius: 4px; border: 1px solid var(--border); border-top: 4px solid #ff453a; display: flex; flex-direction: column; background: #0b0b0c;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+                                <div class="section-label" style="font-size: 1.4rem; font-weight: 900; color: #fff; text-transform: uppercase;"><i class="fa-solid fa-triangle-exclamation" style="color: #ff453a; margin-right: 0.5rem;"></i> Critical Weaknesses</div>
                             </div>
-
-                            <p class="health-hint" id="resume-health-hint">Run Resume Lab analysis to generate a diagnosis.</p>
-                        </aside>
-
-                        <aside class="coach-hero-aside guided-hidden">
-                            <div class="coach-live-progress">
-                                <span class="coach-live-label">Today's momentum</span>
-                                <strong id="coach-daily-gain">+0 today</strong>
-                                <p id="coach-ready-state">Your coach will turn today's resume and interview signals into a clear push.</p>
-                            </div>
-                            <button class="btn-outline coach-next-action-btn" id="coach-next-action-btn">
-                                <i class="fa-solid fa-arrow-right"></i> What Should I Do Next?
-                            </button>
-                            <p id="coach-next-action-copy" class="coach-next-action-copy">Analyze your resume or answer one interview question to unlock your next move.</p>
-                        </aside>
-                    </section>
-
-                    <section class="coach-overview-grid">
-                        <article class="coach-metric-card glass-card">
-                            <span>Daily Streak</span>
-                            <div class="streak-value" aria-label="Daily streak">
-                                <span id="coach-streak-count" class="streak-number">0</span>
-                                <span class="streak-unit">day streak</span>
-                            </div>
-                            <p id="coach-streak-copy">Open Resume Lab or complete a coach action to build momentum.</p>
-                        </article>
-                        <article class="coach-metric-card glass-card" id="coach-resume-score-card">
-                            <span>Resume Score</span>
-                            <div class="metric-value-row">
-                                <strong id="coach-resume-score">--</strong>
-                                <span id="coach-resume-score-delta" class="coach-delta-badge neutral">+0</span>
-                            </div>
-                            <p id="coach-resume-score-copy">Analyze your resume to unlock a score.</p>
-                        </article>
-                        <article class="coach-metric-card glass-card">
-                            <span>Confidence</span>
-                            <div class="metric-value-row">
-                                <strong id="coach-confidence-score">--</strong>
-                                <span id="coach-confidence-delta" class="coach-delta-badge neutral">+0%</span>
-                            </div>
-                            <p id="coach-confidence-copy">Run Resume Lab analysis to calculate readiness.</p>
-                        </article>
-                        <article class="coach-metric-card glass-card guided-hidden">
-                            <span>Sessions</span>
-                            <strong id="coach-session-count">0</strong>
-                            <p>Your practice history builds up here over time.</p>
-                        </article>
-                    </section>
-
-                    <div class="coach-disclosure-row">
-                        <button class="btn-outline coach-disclosure-btn" id="coach-progress-toggle" type="button">
-                            View Progress <span id="coach-progress-arrow">▾</span>
-                        </button>
-                        <button class="btn-outline coach-disclosure-btn" id="coach-advanced-toggle" type="button">
-                            <i class="fa-solid fa-gear"></i> Advanced Settings <span id="coach-advanced-arrow">▾</span>
-                        </button>
+                            <p style="font-size: 1rem; color: var(--text-secondary); margin-bottom: 2rem; line-height: 1.6;">These are absolute bottlenecks preventing your profile from advancing past the initial HR screen. Address them immediately.</p>
+                            <ul id="dash-weaknesses-list" style="list-style: none; display: flex; flex-direction: column; gap: 1.25rem; flex-grow: 1;">
+                                <li class="empty-state">No data yet. Run Resume Lab.</li>
+                            </ul>
+                        </div>
+                        
                     </div>
 
-                    <section class="coach-main-grid guided-main-grid">
-                        <article class="coach-plan-card glass-card">
-                            <div class="coach-card-head">
-                                <div>
-                                    <div class="section-label"><i class="fa-solid fa-calendar-check"></i> Today's Plan</div>
-                                    <h3 id="coach-plan-headline">Loading your daily plan...</h3>
-                                </div>
-                                <button class="btn-outline" id="coach-refresh-plan-btn">
-                                    <i class="fa-solid fa-rotate"></i> Refresh
-                                </button>
-                            </div>
-                            <p id="coach-plan-note" class="muted-copy">Your personalized tasks will appear here.</p>
-                            <div id="coach-daily-tasks" class="coach-task-list">
-                                <p class="empty-state">Loading plan...</p>
-                            </div>
-                        </article>
+                    <!-- Fixes Tracker -->
+                    <div class="dashboard-fixes glass-card mb-5 animate-fade-up delay-300" style="padding: 4rem; display: flex; align-items: center; justify-content: space-between; background: #0b0b0c; border: 1px solid var(--border); border-radius: 4px; position: relative; overflow: hidden;">
+                        <div style="max-width: 600px; z-index: 1;">
+                            <div class="section-label" style="color: var(--primary); font-weight: 900; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 2px;"><i class="fa-solid fa-wrench"></i> Action Required</div>
+                            <h3 class="headline-large" style="font-size: 3rem; margin-bottom: 1.5rem; line-height: 1.2; text-transform: uppercase;">You have <span id="dash-fix-count" style="color: var(--primary);">0</span> critical fixes pending.</h3>
+                            <p class="subtitle" style="margin-bottom: 2.5rem; font-size: 1.2rem; line-height: 1.7; color: var(--text-secondary);">Your resume contains structural anomalies that explicitly lower your ATS ranking. Implement these AI-generated fixes immediately to maximize your recruiter response rate.</p>
+                            <button class="btn-modern-primary" onclick="document.querySelector('[data-pane=\'pane-resume\']')?.click()" style="padding: 1.25rem 2.5rem; font-size: 1.2rem; box-shadow: none;">
+                                Open Resume Lab <i class="fa-solid fa-arrow-right" style="margin-left: 0.75rem;"></i>
+                            </button>
+                        </div>
+                        <div class="fix-visualizer" style="z-index: 1; margin-right: 2rem;">
+                            <i class="fa-solid fa-file-shield" style="font-size: 12rem; color: rgba(255,255,255,0.03);"></i>
+                        </div>
+                    </div>
 
-                        <aside class="coach-control-card glass-card is-collapsed" id="coach-advanced-panel">
-                            <div class="section-label"><i class="fa-solid fa-sliders"></i> Interview Settings</div>
-                            <h3>Pick how you want to practice</h3>
-                            <div class="coach-control-stack">
-                                <label>
-                                    <span>Training Mode</span>
-                                    <select id="coach-training-mode">
-                                        <option value="adaptive">Adaptive</option>
-                                        <option value="weak_area_only">Weak-area only</option>
-                                        <option value="domain_specific">Domain-specific</option>
-                                        <option value="behavioral_only">Behavioral only</option>
-                                    </select>
-                                </label>
-                                <label>
-                                    <span>Interviewer Persona</span>
-                                    <select id="coach-persona">
-                                        <option value="balanced">Balanced Coach</option>
-                                        <option value="senior_engineer">Senior Engineer</option>
-                                        <option value="pressure_panel">Pressure Panel</option>
-                                        <option value="friendly_coach">Friendly Coach</option>
-                                        <option value="behavioral_lead">Behavioral Lead</option>
-                                    </select>
-                                </label>
-                                <label>
-                                    <span>Domain Focus</span>
-                                    <input id="coach-domain-focus" type="text" placeholder="e.g. Flutter, APIs, System Design">
-                                </label>
-                                <label>
-                                    <span>Target Role</span>
-                                    <input id="coach-target-role" type="text" placeholder="e.g. Junior Flutter Developer">
-                                </label>
+                    <!-- About Jobify AI -->
+                    <div class="dashboard-about glass-card mb-5 animate-fade-up delay-300" style="padding: 4rem; background: #0b0b0c; border: 1px solid var(--border); border-radius: 4px;">
+                        <h3 class="headline" style="font-size: 2.5rem; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: -1px;">The Engine Behind Jobify AI</h3>
+                        <p class="subtitle" style="margin-bottom: 4rem; max-width: 800px; font-size: 1.2rem; line-height: 1.8;">Jobify AI is built to systematically deconstruct and optimize your career assets. We leverage state-of-the-art Large Language Models fine-tuned exclusively on senior tech recruiter decision matrices.</p>
+                        <div class="grid-card-layout" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 2.5rem;">
+                            <div class="about-engine-card">
+                                <i class="fa-solid fa-file-lines" style="font-size: 3rem; color: var(--primary); margin-bottom: 2rem;"></i>
+                                <h4 style="font-weight: 900; font-size: 1.4rem; margin-bottom: 1rem; color: #fff; text-transform: uppercase;">Resume Optimization</h4>
+                                <p style="font-size: 1rem; color: var(--text-secondary); line-height: 1.7;">We analyze your resume strictly as a Senior Recruiter, providing actionable fixes to optimize for ATS algorithms and highlight pure business impact.</p>
                             </div>
-                            <p class="coach-shortcuts-hint">
-                                <span>Shortcuts</span>
-                                <kbd>F</kbd> Fix Resume
-                                <kbd>R</kbd> Re-score
-                                <kbd>I</kbd> Interview
-                            </p>
-                        </aside>
-                    </section>
-
-                    <section class="coach-insight-grid guided-insight-grid">
-                        <article class="coach-weak-card glass-card guided-hidden">
-                            <div class="section-label"><i class="fa-solid fa-crosshairs"></i> Weak Areas</div>
-                            <div class="coach-chip-list">
-                                <p class="empty-state">Weak areas are shown in the hero summary.</p>
+                            <div class="about-engine-card">
+                                <i class="fa-solid fa-microphone-lines" style="font-size: 3rem; color: var(--primary); margin-bottom: 2rem;"></i>
+                                <h4 style="font-weight: 900; font-size: 1.4rem; margin-bottom: 1rem; color: #fff; text-transform: uppercase;">Mock Interviews</h4>
+                                <p style="font-size: 1rem; color: var(--text-secondary); line-height: 1.7;">Practice technical and behavioral rounds with realistic AI personas in a high-pressure environment to build real confidence and muscle memory.</p>
                             </div>
-                            <div id="coach-weak-drill" class="coach-drill-hint">
-                                <strong>Next drill</strong>
-                                <p>Finish one resume-aware interview answer and your next focused drill will appear here.</p>
+                            <div class="about-engine-card">
+                                <i class="fa-solid fa-list-check" style="font-size: 3rem; color: var(--primary); margin-bottom: 2rem;"></i>
+                                <h4 style="font-weight: 900; font-size: 1.4rem; margin-bottom: 1rem; color: #fff; text-transform: uppercase;">Smart Job Tracking</h4>
+                                <p style="font-size: 1rem; color: var(--text-secondary); line-height: 1.7;">Organize your applications in a professional CRM interface and generate highly-targeted resume variants customized for every specific role.</p>
                             </div>
-                        </article>
-
-                        <article class="coach-trend-card glass-card is-collapsed" id="coach-progress-panel">
-                            <div class="section-label"><i class="fa-solid fa-chart-line"></i> Progress</div>
-                            <h3>How your practice is trending</h3>
-                            <div id="coach-score-trend" class="coach-trend-bars"></div>
-                            <div id="coach-confidence-trend" class="coach-confidence-trend"></div>
-                        </article>
-
-                        <article class="coach-feedback-card glass-card guided-hidden">
-                            <div class="section-label"><i class="fa-solid fa-comments"></i> Latest Feedback</div>
-                            <div id="coach-feedback-summary">
-                                <p class="empty-state">Complete an interview answer to see score reasoning and next improvements.</p>
-                            </div>
-                        </article>
-                    </section>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -799,6 +679,9 @@
                                 <textarea id="interview-answer-input" placeholder="Answer in 5-10 lines. Use specifics, tradeoffs, and outcomes." rows="1"></textarea>
                                 <div id="chat-answer-hint" class="chat-answer-hint">Answer target: 5-10 lines with context, decision-making, and measurable impact.</div>
                             </div>
+                            <button id="voice-input-btn" class="send-btn voice-btn" title="Voice Input" aria-label="Use voice input">
+                                <i class="fa-solid fa-microphone"></i>
+                            </button>
                             <button id="submit-answer-btn" class="send-btn" title="Send Answer" aria-label="Send interview answer">
                                 <i class="fa-solid fa-paper-plane"></i>
                             </button>
@@ -810,6 +693,6 @@
         </section><!-- /content-area -->
     </div>
 
-    <script src="script.js?v=23"></script>
+    <script src="script.js?v=20260529"></script>
 </body>
 </html>

@@ -695,7 +695,7 @@ function normalizeResumeTextList(values) {
 function normalizeParsedResume(parsed, fallbackText = '') {
     const fallback = fallbackText
         ? parseResumeTextForPreview(fallbackText)
-        : { summary: '', experience: [], projects: [], skills: [], education: [], other: [] };
+        : { summary: '', experience: [], projects: [], skills: [], education: [], certifications: [], other: [] };
     const source = parsed && typeof parsed === 'object' ? parsed : {};
     return {
         summary: repairResumeDisplayText(source.summary || fallback.summary || ''),
@@ -703,6 +703,7 @@ function normalizeParsedResume(parsed, fallbackText = '') {
         projects: normalizeResumeTextList(source.projects || fallback.projects || []),
         skills: normalizeResumeTextList(source.skills || fallback.skills || []),
         education: normalizeResumeTextList(source.education || fallback.education || []),
+        certifications: normalizeResumeTextList(source.certifications || fallback.certifications || []),
         other: normalizeResumeTextList(source.other || fallback.other || []),
     };
 }
@@ -758,6 +759,7 @@ function parseResumeTextForPreview(text) {
         projects: [],
         skills: [],
         education: [],
+        certifications: [],
         other: [],
     };
 
@@ -771,6 +773,11 @@ function parseResumeTextForPreview(text) {
         project: 'projects',
         skills: 'skills',
         education: 'education',
+        academics: 'education',
+        certifications: 'certifications',
+        certificates: 'certifications',
+        achievements: 'certifications',
+        awards: 'certifications',
     };
 
     let current = 'summary';
@@ -1102,6 +1109,7 @@ function markIssueAppliedLocally(issueId) {
     });
 
     if (!matchedIssue) return null;
+    if (matchedIssue.action_type === 'manual') return null;
 
     const currentResume = replaceFirstOccurrence(snapshot.current_resume, matchedIssue.original, matchedIssue.improved);
     const appliedFixes = Array.isArray(snapshot.applied_fixes) ? [...snapshot.applied_fixes] : [];
@@ -1398,8 +1406,8 @@ loginForm?.addEventListener('submit', async e => {
         showToast('Login successful.', 'success');
 
         if (data.has_resume) {
-            showLoading('Login successful. Loading your saved job feed...');
-            await loadDailyFeed();
+            switchPage('page-home');
+            document.querySelector('[data-pane="pane-resume"]')?.click();
         } else {
             switchPage('page-home');
         }
@@ -1817,6 +1825,14 @@ function normalizeResumeAnalysis(data) {
                         original: repairResumeDisplayText(issue?.original || ''),
                         problem: repairResumeDisplayText(issue?.problem || ''),
                         improved: repairResumeDisplayText(issue?.improved || ''),
+                        action_type: issue?.action_type || 'replace',
+                        severity: issue?.severity || 'medium',
+                        category: issue?.category || 'clarity',
+                        insight: repairResumeDisplayText(issue?.insight || ''),
+                        guidance: repairResumeDisplayText(issue?.guidance || ''),
+                        evidence_needed: Array.isArray(issue?.evidence_needed)
+                            ? issue.evidence_needed.map(item => repairResumeDisplayText(String(item || ''))).filter(Boolean)
+                            : [],
                     }))
                     : [],
             }))
@@ -2018,10 +2034,15 @@ function renderNextAction(analysis) {
     }
 
     const sectionName = findIssueSection(issue.id, analysis);
-    resumeNextActionText.textContent = `Next, improve ${sectionName}: ${issue.problem || issue.original || 'apply the strongest remaining fix.'}`;
+    resumeNextActionText.textContent = issue.action_type === 'manual'
+        ? `Next, review ${sectionName}: ${issue.problem || 'add verified evidence before changing the resume.'}`
+        : `Next, improve ${sectionName}: ${issue.problem || issue.original || 'apply the strongest remaining fix.'}`;
     resumeNextActionBtn.disabled = false;
-    resumeNextActionBtn.dataset.issueId = issue.id;
-    resumeNextActionBtn.innerHTML = '<i class="fa-solid fa-arrow-right"></i> Apply Recommended Fix';
+    resumeNextActionBtn.dataset.issueId = issue.action_type === 'manual' ? '' : issue.id;
+    resumeNextActionBtn.dataset.focusIssueId = issue.id;
+    resumeNextActionBtn.innerHTML = issue.action_type === 'manual'
+        ? '<i class="fa-solid fa-pen-to-square"></i> Review Evidence Needed'
+        : '<i class="fa-solid fa-arrow-right"></i> Apply Recommended Fix';
 }
 
 
@@ -2084,8 +2105,8 @@ function renderFixPacks(analysis) {
                 <span>${pack.issues.length} fix${pack.issues.length === 1 ? '' : 'es'}</span>
                 <span>${sanitize(pack.issues.map(issue => findIssueSection(issue.id, analysis)).filter(Boolean)[0] || 'mixed')}</span>
             </div>
-            <button class="btn-outline fix-pack-apply-btn" data-issue-ids="${sanitize(pack.issues.map(issue => issue.id).join(','))}">
-                <i class="fa-solid fa-layer-group"></i> Apply Pack
+            <button class="btn-outline fix-pack-apply-btn" data-issue-ids="${sanitize(pack.issues.filter(issue => issue.action_type !== 'manual').map(issue => issue.id).join(','))}" ${pack.issues.some(issue => issue.action_type !== 'manual') ? '' : 'disabled'}>
+                <i class="fa-solid fa-layer-group"></i> ${pack.issues.some(issue => issue.action_type !== 'manual') ? 'Apply Safe Rewrites' : 'Manual Evidence Pack'}
             </button>
         </article>
     `).join('');
@@ -2128,20 +2149,26 @@ function renderPriorityFixes(analysis) {
         const problemText = repairResumeDisplayText(issue.problem || 'Needs improvement.');
         const originalText = repairResumeDisplayText(issue.original || '');
         const improvedText = repairResumeDisplayText(issue.improved || '');
+        const isManual = issue.action_type === 'manual';
+        const evidenceItems = Array.isArray(issue.evidence_needed) ? issue.evidence_needed : [];
         return `
         <article class="priority-fix-card ${optimisticIds.has(issue.id) ? 'optimistic' : ''}" data-priority-id="${sanitize(issue.id || '')}">
             <div class="priority-fix-copy">
                 <strong>${sanitize(problemText)}</strong>
+                ${issue.insight ? `<p class="priority-insight">${sanitize(issue.insight)}</p>` : ''}
                 <p>${sanitize(originalText)}</p>
-                <p class="priority-improved">${sanitize(improvedText)}</p>
+                <p class="priority-improved ${isManual ? 'manual-guidance' : ''}">${sanitize(improvedText)}</p>
+                ${evidenceItems.length ? `<div class="evidence-chip-row">${evidenceItems.map(item => `<span>${sanitize(item)}</span>`).join('')}</div>` : ''}
             </div>
             <div class="priority-fix-actions">
                 <button class="btn-outline priority-edit-btn" data-issue-id="${sanitize(issue.id || '')}">
-                    <i class="fa-solid fa-pen"></i> Edit
+                    <i class="fa-solid fa-pen"></i> ${isManual ? 'Add Evidence' : 'Edit'}
                 </button>
-                <button class="btn-modern-primary priority-apply-btn" data-issue-id="${sanitize(issue.id || '')}">
-                    <i class="fa-solid fa-bolt"></i> Quick Apply
-                </button>
+                ${isManual
+                    ? ''
+                    : `<button class="btn-modern-primary priority-apply-btn" data-issue-id="${sanitize(issue.id || '')}">
+                        <i class="fa-solid fa-bolt"></i> Quick Apply
+                    </button>`}
             </div>
         </article>
     `;
@@ -2205,34 +2232,41 @@ function renderIssueSections(analysis) {
 function renderIssueCard(issue) {
     const applied = getAppliedIssueIds().has(issue.id) || issue.status === 'applied';
     const optimistic = getOptimisticIssueIds().has(issue.id);
+    const isManual = issue.action_type === 'manual';
     const problemText = repairResumeDisplayText(issue.problem || 'Needs improvement.');
     const originalText = repairResumeDisplayText(issue.original || '');
     const improvedText = repairResumeDisplayText(issue.improved || '');
+    const evidenceItems = Array.isArray(issue.evidence_needed) ? issue.evidence_needed : [];
     return `
-        <article class="issue-card ${applied ? 'applied' : ''} ${optimistic ? 'optimistic' : ''}" data-issue-id="${sanitize(issue.id || '')}">
+        <article class="issue-card ${applied ? 'applied' : ''} ${optimistic ? 'optimistic' : ''} ${isManual ? 'manual' : ''}" data-issue-id="${sanitize(issue.id || '')}">
             <div class="issue-card-head">
-                <strong>${sanitize(issue.action_type || 'replace')}</strong>
-                <span>${optimistic ? 'Syncing...' : applied ? 'Applied' : 'Suggested Fix'}</span>
+                <strong>${isManual ? 'evidence needed' : sanitize(issue.action_type || 'replace')}</strong>
+                <span>${optimistic ? 'Syncing...' : applied ? 'Applied' : isManual ? 'Manual Insight' : 'Safe Rewrite'}</span>
             </div>
             <div class="issue-card-body">
                 <p class="issue-problem">${sanitize(problemText)}</p>
+                ${issue.insight ? `<p class="issue-insight">${sanitize(issue.insight)}</p>` : ''}
                 <div class="issue-compare">
                     <div class="issue-pane original-pane">
                         <label>Original Text</label>
                         <p>${sanitize(originalText)}</p>
                     </div>
-                    <div class="issue-pane improved-pane">
-                        <label>Improved Version</label>
+                    <div class="issue-pane improved-pane ${isManual ? 'manual-guidance' : ''}">
+                        <label>${isManual ? 'What To Add Truthfully' : 'Improved Version'}</label>
                         <p>${sanitize(improvedText)}</p>
+                        ${evidenceItems.length ? `<div class="evidence-chip-row">${evidenceItems.map(item => `<span>${sanitize(item)}</span>`).join('')}</div>` : ''}
+                        ${issue.guidance ? `<p class="truth-note">${sanitize(issue.guidance)}</p>` : ''}
                     </div>
                 </div>
                 <div class="issue-actions">
                     <button class="btn-outline edit-fix-btn" data-issue-id="${sanitize(issue.id || '')}">
-                        <i class="fa-solid fa-pen"></i> Edit
+                        <i class="fa-solid fa-pen"></i> ${isManual ? 'Add Evidence' : 'Edit'}
                     </button>
-                    <button class="btn-modern-primary apply-fix-btn" data-issue-id="${sanitize(issue.id || '')}" ${applied ? 'disabled' : ''}>
-                        <i class="fa-solid fa-wand-magic-sparkles"></i> ${optimistic ? 'Syncing...' : applied ? 'Applied' : 'Apply Fix'}
-                    </button>
+                    ${isManual
+                        ? ''
+                        : `<button class="btn-modern-primary apply-fix-btn" data-issue-id="${sanitize(issue.id || '')}" ${applied ? 'disabled' : ''}>
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> ${optimistic ? 'Syncing...' : applied ? 'Applied' : 'Apply Fix'}
+                        </button>`}
                 </div>
             </div>
         </article>
@@ -2296,7 +2330,9 @@ function focusEditorOnIssue(issue) {
     if (!issue) return;
     toggleFixMode(true);
     setResumeEditorValues(true);
-    resumeSuggestionText.textContent = `${issue.original} -> ${issue.improved}`;
+    resumeSuggestionText.textContent = issue.action_type === 'manual'
+        ? `${issue.problem || 'Add verified evidence.'} ${issue.improved || ''}`
+        : `${issue.original} -> ${issue.improved}`;
     resumeSuggestionBanner?.classList.remove('hidden');
 
     const original = issue.original || '';
@@ -2481,94 +2517,49 @@ async function loadCoachDashboard(force = false) {
 }
 
 function renderCoachDashboard() {
-    renderResumeStreak();
-    const dailySnapshot = getDailyProgressSnapshot();
-    const memory = coachState.memory || {};
-    const plan = coachState.plan || {};
-    const resumeAnalysis = resumeLabState.last_analysis
+    const analysis = resumeLabState.last_analysis
         ? normalizeResumeAnalysis(resumeLabState.last_analysis)
         : (coachState.resumeLab?.last_analysis ? normalizeResumeAnalysis(coachState.resumeLab.last_analysis) : null);
-    const confidence = resumeAnalysis ? getConfidenceScore(resumeAnalysis) : 0;
-    const scoreTrend = Array.isArray(memory.score_trend) ? memory.score_trend : [];
-    const latestScore = scoreTrend.length
-        ? Number(scoreTrend[scoreTrend.length - 1]?.score || 0)
-        : Number(memory.avg_answer_score || 0);
-    const previousScore = scoreTrend.length > 1
-        ? Number(scoreTrend[scoreTrend.length - 2]?.score || latestScore)
-        : Number(coachState.ui?.lastAvgScore ?? latestScore);
-    const scoreDelta = scoreTrend.length > 1 ? latestScore - previousScore : 0;
-    const resumeScore = resumeAnalysis ? clampScore(resumeAnalysis.score) : 0;
-    const previousResumeScore = Number.isFinite(Number(coachState.ui?.lastResumeScore))
-        ? Number(coachState.ui.lastResumeScore)
-        : resumeScore;
-    const resumeScoreDelta = resumeAnalysis ? resumeScore - previousResumeScore : 0;
-    const previousConfidence = Number.isFinite(Number(coachState.ui?.lastConfidence))
-        ? Number(coachState.ui.lastConfidence)
-        : confidence;
-    const confidenceDelta = resumeAnalysis ? confidence - previousConfidence : 0;
-    const nextIssue = getNextBestIssue(resumeAnalysis);
-    const firstTask = Array.isArray(plan?.tasks) ? plan.tasks[0] : null;
-    let nextActionType = 'interview';
-    let nextActionLabel = 'Start Interview';
-    let nextActionCopy = firstTask?.title
-        ? `${firstTask.title}. ${firstTask.why || 'Keep moving with one small task right now.'}`
-        : 'Start an interview to turn today\'s feedback into practice.';
 
-    if (nextIssue) {
-        nextActionType = 'resume_fix';
-        nextActionLabel = 'Fix Resume';
-        nextActionCopy = `Quick win: ${findIssueSection(nextIssue.id, resumeAnalysis)} - ${nextIssue.problem || nextIssue.original}`;
-    } else if (resumeAnalysis && countOpenIssues(resumeAnalysis) === 0 && resumeAnalysis.score >= 80) {
-        nextActionType = 'interview';
-        nextActionLabel = 'Practice Interview';
-        nextActionCopy = 'Your draft looks strong. Practice with an interview while the improvements are still fresh.';
+    const strengthEl = document.getElementById('dash-summary-strength');
+    const descEl = document.getElementById('dash-summary-desc');
+    const strengthsList = document.getElementById('dash-strengths-list');
+    const weaknessesList = document.getElementById('dash-weaknesses-list');
+    const fixCountEl = document.getElementById('dash-fix-count');
+
+    if (!analysis) {
+        if (strengthEl) strengthEl.textContent = 'Needs Analysis';
+        if (descEl) descEl.textContent = 'Run a Resume Lab analysis to generate your profile summary.';
+        if (strengthsList) strengthsList.innerHTML = '<li class="empty-state">No data yet. Run Resume Lab.</li>';
+        if (weaknessesList) weaknessesList.innerHTML = '<li class="empty-state">No data yet. Run Resume Lab.</li>';
+        if (fixCountEl) fixCountEl.textContent = '0';
+        return;
     }
 
-    if (coachStreakCount) coachStreakCount.textContent = String(resumeStreakState.count || 0);
-    if (coachStreakCopy) coachStreakCopy.textContent = resumeStreakState.count > 1
-        ? 'You are building a steady prep habit.'
-        : 'Come back daily to keep the streak alive.';
-    if (coachResumeScore) coachResumeScore.textContent = resumeAnalysis ? String(resumeScore) : '--';
-    if (coachResumeScoreCopy) coachResumeScoreCopy.textContent = resumeAnalysis
-        ? 'Latest score from Resume Lab.'
-        : 'Run Resume Lab to calculate your score.';
-    setDeltaBadge(coachResumeScoreDelta, resumeAnalysis ? resumeScoreDelta : 0, '');
-    if (coachConfidenceScore) coachConfidenceScore.textContent = resumeAnalysis ? `${confidence}%` : '--';
-    if (coachConfidenceCopy) coachConfidenceCopy.textContent = resumeAnalysis
-        ? getConfidenceLabel(confidence)
-        : 'Analyze your resume to unlock readiness scoring.';
-    setDeltaBadge(coachConfidenceDelta, resumeAnalysis ? confidenceDelta : 0, '%');
-    if (coachSessionCount) coachSessionCount.textContent = String(memory.session_count || 0);
-    if (coachDailyGain) coachDailyGain.textContent = `+${Math.round(dailySnapshot.points || 0)} today`;
-    if (coachReadyState) {
-        coachReadyState.textContent = resumeAnalysis && confidence >= 85
-            ? 'Your resume looks ready. Next, practice your strongest stories in an interview round.'
-            : latestScore >= 8
-                ? 'Your interview answers are improving. Push into deeper follow-up questions today.'
-                : dailySnapshot.lastEvent
-                    ? `Latest progress: ${dailySnapshot.lastEvent}. Keep going with one more focused step.`
-                    : 'Your coach will turn today\'s resume and interview signals into a simple next step.';
-    }
-    // Guided UI: keep dashboard focused (no secondary next-action CTA duplication).
-    if (coachNextActionCopy) coachNextActionCopy.textContent = '';
-    if (coachNextActionBtn) {
-        coachNextActionBtn.dataset.action = '';
-        coachNextActionBtn.dataset.issueId = '';
+    const score = clampScore(analysis.score);
+    let strengthText = 'Strong';
+    if (score < 60) strengthText = 'Needs Work';
+    else if (score < 80) strengthText = 'Good';
+
+    if (strengthEl) strengthEl.textContent = `${score}/100 (${strengthText})`;
+    if (descEl) descEl.textContent = 'Based on your latest Resume Lab analysis.';
+
+    const strengths = analysis.summary_feedback?.strengths || [];
+    if (strengthsList) {
+        strengthsList.innerHTML = strengths.length > 0 
+            ? strengths.map(s => `<li><i class="fa-solid fa-check text-success" style="margin-right: 0.5rem;"></i> ${sanitize(s)}</li>`).join('')
+            : '<li class="empty-state">No strengths identified.</li>';
     }
 
-    renderCoachControls(coachState.modes);
-    renderCoachDailyPlan(plan);
-    renderCoachWeakAreas(memory.recurring_weak_areas || []);
-    renderCoachTrends(scoreTrend, confidence);
-    renderCoachFeedback(coachState.latestFeedback);
-    renderResumeHealthPanel(resumeAnalysis);
-    patchCoachState({
-        ui: {
-            lastAvgScore: Number.isFinite(latestScore) ? latestScore : coachState.ui?.lastAvgScore,
-            lastConfidence: resumeAnalysis ? confidence : coachState.ui?.lastConfidence,
-            lastResumeScore: resumeAnalysis ? resumeScore : coachState.ui?.lastResumeScore,
-        },
-    });
+    const weaknesses = analysis.summary_feedback?.weaknesses || [];
+    if (weaknessesList) {
+        weaknessesList.innerHTML = weaknesses.length > 0
+            ? weaknesses.map(w => `<li><i class="fa-solid fa-xmark text-danger" style="margin-right: 0.5rem; color: #ef4444;"></i> ${sanitize(w)}</li>`).join('')
+            : '<li class="empty-state">No critical weaknesses identified.</li>';
+    }
+
+    const fixCount = countOpenIssues(analysis);
+    if (fixCountEl) fixCountEl.textContent = fixCount.toString();
 }
 
 function renderCoachControls(modesData) {
@@ -2731,6 +2722,11 @@ if (resumeNextActionBtn) {
         const issueId = resumeNextActionBtn.dataset.issueId;
         if (issueId) {
             await applyResumeIssue(issueId, resumeNextActionBtn);
+            return;
+        }
+        const focusIssueId = resumeNextActionBtn.dataset.focusIssueId;
+        if (focusIssueId) {
+            focusEditorOnIssue(getIssueById(focusIssueId));
             return;
         }
         if (rescoreResumeBtn && !resumeNextActionBtn.disabled) {
@@ -2904,6 +2900,56 @@ answerInput.addEventListener('input', () => {
 answerInput.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitAnswerBtn.click(); }
 });
+
+// ── Voice Input ──────────────────────────────────────────────
+const voiceInputBtn = document.getElementById('voice-input-btn');
+let speechRecog = null;
+
+if (voiceInputBtn) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+        speechRecog = new SpeechRecognition();
+        speechRecog.continuous = true;
+        speechRecog.interimResults = true;
+
+        speechRecog.onstart = () => voiceInputBtn.classList.add('recording');
+        speechRecog.onend = () => voiceInputBtn.classList.remove('recording');
+        speechRecog.onerror = (e) => {
+            voiceInputBtn.classList.remove('recording');
+            if (e.error !== 'no-speech') {
+                showToast('Voice input error: ' + e.error, 'error');
+            }
+        };
+
+        speechRecog.onresult = (e) => {
+            let completeFinal = '';
+            let completeInterim = '';
+            for (let i = 0; i < e.results.length; i++) {
+                if (e.results[i].isFinal) {
+                    completeFinal += e.results[i][0].transcript;
+                } else {
+                    completeInterim += e.results[i][0].transcript;
+                }
+            }
+            
+            const initial = answerInput.dataset.initialValue || '';
+            answerInput.value = initial + completeFinal + completeInterim;
+            answerInput.style.height = 'auto';
+            answerInput.style.height = Math.min(answerInput.scrollHeight, 140) + 'px';
+        };
+
+        voiceInputBtn.addEventListener('click', () => {
+            if (voiceInputBtn.classList.contains('recording')) {
+                speechRecog.stop();
+            } else {
+                answerInput.dataset.initialValue = answerInput.value ? answerInput.value + (answerInput.value.endsWith(' ') ? '' : ' ') : '';
+                speechRecog.start();
+            }
+        });
+    } else {
+        voiceInputBtn.addEventListener('click', () => showToast('Voice input not supported in this browser.', 'error'));
+    }
+}
 
 // ── Start new session ────────────────────────────────────────
 startBtn.addEventListener('click', async () => {
@@ -3569,6 +3615,8 @@ function renderResumePreview() {
         ['Experience', parsedResume.experience || []],
         ['Projects', parsedResume.projects || []],
         ['Skills', parsedResume.skills || []],
+        ['Education', parsedResume.education || []],
+        ['Certifications', parsedResume.certifications || []],
     ];
 
     const sectionMarkup = sections
@@ -3618,7 +3666,6 @@ function renderResumePreview() {
             <div class="resume-paper-head">
                 <div>
                     <span class="resume-paper-label">${showingBefore ? 'Original Draft' : 'Improved Draft'}</span>
-                    <strong>${showingBefore ? 'Before changes' : 'Readable recruiter view'}</strong>
                 </div>
                 <span class="resume-paper-status">${showingBefore ? 'Reference copy' : `${getAppliedIssueIds().size} fixes applied`}</span>
             </div>

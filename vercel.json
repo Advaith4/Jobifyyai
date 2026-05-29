@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "name": "jobify-frontend",
+  "public": true,
+  "builds": [
+    { "src": "static/**", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/static/index.html" }
+  ]
+}
